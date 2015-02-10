@@ -48,7 +48,7 @@ describe('chrome.Options', function() {
         args: ['a', 'b'],
         extensions: [1, 2],
         binary: 'binaryPath',
-        logPath: 'logFilePath',
+        logFile: 'logFilePath',
         detach: true,
         localState: 'localStateValue',
         prefs: 'prefsValue'
@@ -72,18 +72,18 @@ describe('chrome.Options', function() {
     it('should rebuild options from incomplete wire representation',
         function() {
           var caps = webdriver.Capabilities.chrome().set('chromeOptions', {
-            logPath: 'logFilePath'
+            logFile: 'logFilePath'
           });
 
           var options = chrome.Options.fromCapabilities(caps);
-          var json = options.serialize();
+          var json = options.toJSON();
 
           assert(json.args.length).equalTo(0);
           assert(json.binary).isUndefined();
           assert(json.detach).isFalse();
           assert(json.extensions.length).equalTo(0);
           assert(json.localState).isUndefined();
-          assert(json.logPath).equalTo('logFilePath');
+          assert(json.logFile).equalTo('logFilePath');
           assert(json.prefs).isUndefined();
         });
 
@@ -152,10 +152,10 @@ describe('chrome.Options', function() {
     });
   });
 
-  describe('serialize', function() {
+  describe('toJSON', function() {
     it('base64 encodes extensions', function() {
       var expected = fs.readFileSync(__filename, 'base64');
-      var wire = new chrome.Options().addExtensions(__filename).serialize();
+      var wire = new chrome.Options().addExtensions(__filename).toJSON();
       assert(wire.extensions.length).equalTo(1);
       assert(wire.extensions[0]).equalTo(expected);
     });
@@ -181,7 +181,7 @@ describe('chrome.Options', function() {
       var proxyPrefs = {};
       var loggingPrefs = {};
       var options = new chrome.Options().
-          setLoggingPrefs(loggingPrefs).
+          setLoggingPreferences(loggingPrefs).
           setProxy(proxyPrefs);
 
       var caps = options.toCapabilities();
@@ -192,18 +192,14 @@ describe('chrome.Options', function() {
 });
 
 test.suite(function(env) {
-  var driver;
+  env.autoCreateDriver = false;
 
-  test.afterEach(function() {
-    driver.quit();
-  });
-
-  describe('Chrome options', function() {
+  describe('options', function() {
     test.it('can start Chrome with custom args', function() {
       var options = new chrome.Options().
           addArguments('user-agent=foo;bar');
 
-      driver = env.builder().
+      var driver = env.builder().
           setChromeOptions(options).
           build();
 

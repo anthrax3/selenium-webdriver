@@ -1,13 +1,13 @@
-# selenium-webdriver
+# browserstack-webdriver
 
 ## Installation
 
 Install the latest published version using `npm`:
 
-    npm install selenium-webdriver
+    npm install browserstack-webdriver
 
 In addition to the npm package, you will to download the WebDriver
-implementations you wish to utilize. As of 2.34.0, `selenium-webdriver`
+implementations you wish to utilize. As of 2.34.0, `browserstack-webdriver`
 natively supports the [ChromeDriver](http://chromedriver.storage.googleapis.com/index.html).
 Simply download a copy and make sure it can be found on your `PATH`. The other
 drivers (e.g. Firefox, Internet Explorer, and Safari), still require the
@@ -19,7 +19,7 @@ To run the tests, you will need to download a copy of the
 [ChromeDriver](http://chromedriver.storage.googleapis.com/index.html) and make
 sure it can be found on your `PATH`.
 
-    cd node_modules/selenium-webdriver/ && npm test
+    npm test browserstack-webdriver
 
 To run the tests against multiple browsers, download the
 [Selenium server](http://selenium-release.storage.googleapis.com/index.html) and
@@ -28,32 +28,35 @@ You can use the `SELENIUM_BROWSER` environment variable to define a
 comma-separated list of browsers you wish to test against. For example:
 
     export SELENIUM_SERVER_JAR=path/to/selenium-server-standalone-2.33.0.jar
-    SELENIUM_BROWSER=chrome,firefox npm test
+    SELENIUM_BROWSER=chrome,firefox npm test browserstack-webdriver
 
 ## Usage
 
 
-    var By = require('selenium-webdriver').By,
-        until = require('selenium-webdriver').until,
-        firefox = require('selenium-webdriver/firefox');
+    var webdriver = require('browserstack-webdriver');
 
-    var driver = new firefox.Driver();
+    var driver = new webdriver.Builder().
+        withCapabilities(webdriver.Capabilities.chrome()).
+        build();
 
-    driver.get('http://www.google.com/ncr');
-    driver.findElement(By.name('q')).sendKeys('webdriver');
-    driver.findElement(By.name('btnG')).click();
-    driver.wait(until.titleIs('webdriver - Google Search'), 1000);
+    driver.get('http://www.google.com');
+    driver.findElement(webdriver.By.name('q')).sendKeys('webdriver');
+    driver.findElement(webdriver.By.name('btnG')).click();
+    driver.wait(function() {
+      return driver.getTitle().then(function(title) {
+        return title === 'webdriver - Google Search';
+      });
+    }, 1000);
+
     driver.quit();
 
 ## Documentation
 
-API documentation is included in the docs module. The API documentation for the
-current release are also available online from the [Selenium project](http://selenium.googlecode.com/git/docs/api/javascript/index.html "API docs"). A full user guide is available on the
-[Selenium project wiki](http://code.google.com/p/selenium/wiki/WebDriverJs "User guide").
+Full documentation is available on the [Selenium project wiki](http://code.google.com/p/selenium/wiki/WebDriverJs "User guide").
 
 ## Issues
 
-Please report any issues using the [Selenium issue tracker](https://code.google.com/p/selenium/issues/list).
+Please report any issues using the [Selenium issue tracker](https://github.com/browserstack/selenium-webdriver-nodejs/issues).
 
 ## License
 

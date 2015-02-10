@@ -20,20 +20,13 @@ var assert = require('assert'),
 
 var test = require('../lib/test'),
     fileserver = require('../lib/test/fileserver'),
-    Browser = require('..').Browser,
+    Browser = test.Browser,
     Pages = test.Pages;
 
 
 test.suite(function(env) {
   var driver;
-
-  test.before(function() {
-    driver = env.builder().build();
-  });
-
-  test.after(function() {
-    driver.quit();
-  });
+  beforeEach(function() { driver = env.driver; });
 
   test.ignore(env.browsers(Browser.SAFARI)).  // Cookie handling is broken.
   describe('Cookie Management;', function() {

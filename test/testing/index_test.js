@@ -16,7 +16,6 @@
 'use strict';
 
 var assert = require('assert');
-var promise = require('../..').promise;
 
 var test = require('../../testing');
 
@@ -38,70 +37,5 @@ describe('Mocha Integration', function() {
     beforeEach(function() { this.x = 1; });
     test.it('', function() { this.x = 2; });
     afterEach(function() { assert.equal(this.x, 2); });
-  });
-
-  describe('timeout handling', function() {
-    describe('it does not reset the control flow on a non-timeout', function() {
-      var flowReset = false;
-
-      beforeEach(function() {
-        flowReset = false;
-        promise.controlFlow().once(
-            promise.ControlFlow.EventType.RESET, onreset);
-      });
-
-      test.it('', function() {
-        this.timeout(100);
-        return promise.delayed(50);
-      });
-
-      afterEach(function() {
-        assert.ok(!flowReset);
-        promise.controlFlow().removeListener(
-            promise.ControlFlow.EventType.RESET, onreset);
-      });
-
-      function onreset() {
-        flowReset = true;
-      }
-    });
-
-    describe('it resets the control flow after a timeout' ,function() {
-      var timeoutErr, flowReset;
-
-      beforeEach(function() {
-        flowReset = false;
-        promise.controlFlow().once(
-            promise.ControlFlow.EventType.RESET, onreset);
-      });
-
-      test.it('', function() {
-        var callback = this.runnable().callback;
-        var test = this;
-        this.runnable().callback = function(err) {
-          timeoutErr = err;
-          // Reset our timeout to 0 so Mocha does not fail the test.
-          test.timeout(0);
-          // When we invoke the real callback, do not pass along the error so
-          // Mocha does not fail the test.
-          return callback.call(this);
-        };
-
-        test.timeout(50);
-        return promise.defer().promise;
-      });
-
-      afterEach(function() {
-        promise.controlFlow().removeListener(
-            promise.ControlFlow.EventType.RESET, onreset);
-        assert.ok(flowReset, 'control flow was not reset after a timeout');
-        assert.ok(timeoutErr instanceof Error);
-        assert.equal(timeoutErr.message, 'timeout of 50ms exceeded');
-      });
-
-      function onreset() {
-        flowReset = true;
-      }
-    });
   });
 });

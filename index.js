@@ -52,10 +52,6 @@ exports.Command = base.require('webdriver.Command');
 exports.EventEmitter = base.require('webdriver.EventEmitter');
 
 
-/** @type {function(new: webdriver.Serializable)} */
-exports.Serializable = base.require('webdriver.Serializable');
-
-
 /** @type {function(new: webdriver.Session)} */
 exports.Session = base.require('webdriver.Session');
 
@@ -66,10 +62,6 @@ exports.WebDriver = base.require('webdriver.WebDriver');
 
 /** @type {function(new: webdriver.WebElement)} */
 exports.WebElement = base.require('webdriver.WebElement');
-
-
-/** @type {function(new: webdriver.WebElementPromise)} */
-exports.WebElementPromise = base.require('webdriver.WebElementPromise');
 
 
 // Export the remainder of our API through getters to keep things cleaner
@@ -133,10 +125,4 @@ exports.WebElementPromise = base.require('webdriver.WebElementPromise');
 /** @type {webdriver.stacktrace.} */
 (exports.__defineGetter__('stacktrace', function() {
   return base.exportPublicApi('webdriver.stacktrace');
-}));
-
-
-/** @type {webdriver.until.} */
-(exports.__defineGetter__('until', function() {
-  return base.exportPublicApi('webdriver.until');
 }));

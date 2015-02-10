@@ -39,23 +39,5 @@ var base = require('../_base'),
 // PUBLIC API
 
 
-/**
- * Creates a new assertion.
- * @param {*} value The value to perform an assertion on.
- * @return {!webdriver.testing.Assertion} The new assertion.
- */
-module.exports = function(value) {
-  return assert(value);
-};
-
-
-/**
- * Registers a new assertion to expose from the
- * {@link webdriver.testing.Assertion} prototype.
- * @param {string} name The assertion name.
- * @param {(function(new: goog.labs.testing.Matcher, *)|
- *          {matches: function(*): boolean,
- *           describe: function(): string})} matcherTemplate Either the
- *     matcher constructor to use, or an object literal defining a matcher.
- */
-module.exports.register = assert.register;
+/** @type {webdriver.testing.assert.} */
+module.exports = assert;

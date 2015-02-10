@@ -175,7 +175,6 @@ ServiceBuilder.prototype.build = function() {
   var args = this.args_.concat();  // Defensive copy.
 
   return new remote.DriverService(this.exe_, {
-    loopback: true,
     port: port,
     args: webdriver.promise.when(port, function(port) {
       return args.concat('--port=' + port);
@@ -229,18 +228,14 @@ var OPTIONS_CAPABILITY_KEY = 'chromeOptions';
 /**
  * Class for managing ChromeDriver specific options.
  * @constructor
- * @extends {webdriver.Serializable}
  */
 var Options = function() {
-  webdriver.Serializable.call(this);
-
   /** @private {!Array.<string>} */
   this.args_ = [];
 
   /** @private {!Array.<(string|!Buffer)>} */
   this.extensions_ = [];
 };
-util.inherits(Options, webdriver.Serializable);
 
 
 /**
@@ -261,7 +256,7 @@ Options.fromCapabilities = function(capabilities) {
         addExtensions(o.extensions || []).
         detachDriver(!!o.detach).
         setChromeBinaryPath(o.binary).
-        setChromeLogFile(o.logPath).
+        setChromeLogFile(o.logFile).
         setLocalState(o.localState).
         setUserPreferences(o.prefs);
   }
@@ -271,7 +266,7 @@ Options.fromCapabilities = function(capabilities) {
   }
 
   if (capabilities.has(webdriver.Capability.LOGGING_PREFS)) {
-    options.setLoggingPrefs(
+    options.setLoggingPreferences(
         capabilities.get(webdriver.Capability.LOGGING_PREFS));
   }
 
@@ -356,7 +351,7 @@ Options.prototype.setUserPreferences = function(prefs) {
  * @param {!webdriver.logging.Preferences} prefs The logging preferences.
  * @return {!Options} A self reference.
  */
-Options.prototype.setLoggingPrefs = function(prefs) {
+Options.prototype.setLoggingPreferences = function(prefs) {
   this.logPrefs_ = prefs;
   return this;
 };
@@ -388,7 +383,7 @@ Options.prototype.setChromeLogFile = function(path) {
 
 /**
  * Sets the proxy settings for the new session.
- * @param {webdriver.ProxyConfig} proxy The proxy configuration to use.
+ * @param {ProxyConfig} proxy The proxy configuration to use.
  * @return {!Options} A self reference.
  */
 Options.prototype.setProxy = function(proxy) {
@@ -419,42 +414,27 @@ Options.prototype.toCapabilities = function(opt_capabilities) {
  * @return {{args: !Array.<string>,
  *           binary: (string|undefined),
  *           detach: boolean,
- *           extensions: !Array.<(string|!webdriver.promise.Promise.<string>))>,
+ *           extensions: !Array.<string>,
  *           localState: (Object|undefined),
- *           logPath: (string|undefined),
+ *           logFile: (string|undefined),
  *           prefs: (Object|undefined)}} The JSON wire protocol representation
  *     of this instance.
- * @override
  */
-Options.prototype.serialize = function() {
-  var json = {
+Options.prototype.toJSON = function() {
+  return {
     args: this.args_,
+    binary: this.binary_,
     detach: !!this.detach_,
     extensions: this.extensions_.map(function(extension) {
       if (Buffer.isBuffer(extension)) {
         return extension.toString('base64');
       }
-      return webdriver.promise.checkedNodeCall(
-          fs.readFile, extension, 'base64');
-    })
+      return fs.readFileSync(extension, 'base64');
+    }),
+    localState: this.localState_,
+    logFile: this.logFile_,
+    prefs: this.prefs_
   };
-
-  // ChromeDriver barfs on null keys, so we must ensure these are not included
-  // if unset (really?)
-  if (this.binary_) {
-    json.binary = this.binary_;
-  }
-  if (this.localState_) {
-    json.localState = this.localState_;
-  }
-  if (this.logFile_) {
-    json.logPath = this.logFile_;
-  }
-  if (this.prefs_) {
-    json.prefs = this.prefs_;
-  }
-
-  return json;
 };
 
 
@@ -463,51 +443,30 @@ Options.prototype.serialize = function() {
  * @param {(webdriver.Capabilities|Options)=} opt_options The session options.
  * @param {remote.DriverService=} opt_service The session to use; will use
  *     the {@link getDefaultService default service} by default.
- * @param {webdriver.promise.ControlFlow=} opt_flow The control flow to use, or
- *     {@code null} to use the currently active flow.
  * @return {!webdriver.WebDriver} A new WebDriver instance.
- * @deprecated Use {@link Driver new Driver()}.
  */
-function createDriver(opt_options, opt_service, opt_flow) {
-  return new Driver(opt_options, opt_service, opt_flow);
-}
-
-
-/**
- * Creates a new WebDriver client for Chrome.
- *
- * @param {(webdriver.Capabilities|Options)=} opt_config The configuration
- *     options.
- * @param {remote.DriverService=} opt_service The session to use; will use
- *     the {@link getDefaultService default service} by default.
- * @param {webdriver.promise.ControlFlow=} opt_flow The control flow to use, or
- *     {@code null} to use the currently active flow.
- * @constructor
- * @extends {webdriver.WebDriver}
- */
-var Driver = function(opt_config, opt_service, opt_flow) {
+function createDriver(opt_options, opt_service) {
   var service = opt_service || getDefaultService();
   var executor = executors.createExecutor(service.start());
 
-  var capabilities =
-      opt_config instanceof Options ? opt_config.toCapabilities() :
-      (opt_config || webdriver.Capabilities.chrome());
+  var options = opt_options || new Options();
+  if (opt_options instanceof webdriver.Capabilities) {
+    // Extract the Chrome-specific options so we do not send unnecessary
+    // data across the wire.
+    options = Options.fromCapabilities(options);
+  }
 
-  var driver = webdriver.WebDriver.createSession(
-      executor, capabilities, opt_flow);
+  return webdriver.WebDriver.createSession(
+      executor, options.toCapabilities());
+}
 
-  webdriver.WebDriver.call(
-      this, driver.getSession(), executor, driver.controlFlow());
-};
-util.inherits(Driver, webdriver.WebDriver);
 
 
 // PUBLIC API
 
 
-exports.Driver = Driver;
-exports.Options = Options;
 exports.ServiceBuilder = ServiceBuilder;
+exports.Options = Options;
 exports.createDriver = createDriver;
 exports.getDefaultService = getDefaultService;
 exports.setDefaultService = setDefaultService;
